@@ -60,7 +60,8 @@ func TestLoadConfig(t *testing.T) {
 			}
 
 			expected := loadExpected(t, name)
-			assert.EqualValues(expected, actual)
+			// assert.EqualValues(expected, actual)
+			assert.EqualValuesf(expected, actual, "error message %s", "formatted")
 		})
 	}
 }

@@ -1,6 +1,7 @@
 package uci
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -59,6 +60,9 @@ type Tree interface {
 	// and sections, you first need to initialize them with AddSection().
 	Set(config, section, option string, values ...string) bool
 
+	// SetType sets the option type. Either ItemList or ItemOption.
+	SetType(config, section, option string, itemType ItemType, values ...string) bool
+
 	// Del removes a fully qualified option.
 	Del(config, section, option string)
 
@@ -89,6 +93,7 @@ func NewTree(root string) Tree {
 }
 
 func (t *tree) LoadConfig(name string, forceReload bool) error {
+	fmt.Println("test")
 	t.Lock()
 	defer t.Unlock()
 
@@ -236,7 +241,7 @@ func (t *tree) lookupValues(config, section, option string) ([]string, bool) {
 	return opt.Values, true
 }
 
-func (t *tree) Set(config, section, option string, values ...string) bool {
+func (t *tree) SetType(config, section, option string, itemType ItemType, values ...string) bool {
 	t.Lock()
 	defer t.Unlock()
 
@@ -252,10 +257,14 @@ func (t *tree) Set(config, section, option string, values ...string) bool {
 	if opt := sec.Get(option); opt != nil {
 		opt.SetValues(values...)
 	} else {
-		sec.Add(newOption(option, values...))
+		sec.Add(newOption(option, ItemOption, values...))
 	}
 	cfg.tainted = true
 	return true
+}
+
+func (t *tree) Set(config, section, option string, values ...string) bool {
+	return t.SetType(config, section, option, ItemOption, values...)
 }
 
 func (t *tree) Del(config, section, option string) {
