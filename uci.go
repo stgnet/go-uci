@@ -257,7 +257,7 @@ func (t *tree) SetType(config, section, option string, itemType ItemType, values
 	if opt := sec.Get(option); opt != nil {
 		opt.SetValues(values...)
 	} else {
-		sec.Add(newOption(option, ItemOption, values...))
+		sec.Add(newOption(option, itemType, values...))
 	}
 	cfg.tainted = true
 	return true
