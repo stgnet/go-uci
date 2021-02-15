@@ -1,6 +1,7 @@
 package uci
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -92,6 +93,7 @@ func NewTree(root string) Tree {
 }
 
 func (t *tree) LoadConfig(name string, forceReload bool) error {
+	fmt.Println("test")
 	t.Lock()
 	defer t.Unlock()
 
