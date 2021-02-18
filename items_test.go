@@ -22,7 +22,7 @@ func TestItemTypeString(t *testing.T) {
 	}
 
 	for i, expected := range names {
-		subject := ItemType(i)
+		subject := itemType(i)
 		assert.Equal(expected, subject.String())
 	}
 }
@@ -61,9 +61,7 @@ func TestItemString(t *testing.T) {
 		}, {
 			item{itemError, "foo 0123456789 bar 0123456789", -1},
 			`(Error "foo 0123456789 bar 0123456789")`,
-		},
-
-		{
+		}, {
 			item{itemString, "foo", 42},
 			`(String "foo" 42)`,
 		}, {

@@ -85,15 +85,15 @@ func (l *lexer) eof() item {
 // emit emits a token
 //
 // https://talks.golang.org/2011/lex.slide#25
-func (l *lexer) emit(t ItemType) {
+func (l *lexer) emit(t itemType) {
 	if l.pos > l.start {
 		l.items <- item{t, l.input[l.start:l.pos], l.pos}
 		l.start = l.pos
 	}
 }
 
-// emitString emits a string token. it removes the surrounding quotes
-func (l *lexer) emitString(t ItemType) {
+// emitString emits a string token. it removes the surrounding quotes.
+func (l *lexer) emitString(t itemType) {
 	if l.pos-1 > l.start+1 {
 		l.items <- item{t, l.input[l.start+1 : l.pos-1], l.pos}
 		l.start = l.pos
@@ -199,7 +199,7 @@ func (l *lexer) errorf(format string, args ...interface{}) stateFn {
 	return nil
 }
 
-// rest returns the not-yet ingested part of l.input
+// rest returns the not-yet ingested part of l.input.
 func (l *lexer) rest() string {
 	return l.input[l.pos:]
 }
@@ -222,7 +222,12 @@ func lexKeyword(l *lexer) stateFn {
 	if l.next() == eof {
 		l.emit(itemEOF)
 	} else {
-		l.errorf("expected keyword (package, config, option, list) or eof")
+		l.backup()
+		unexpected := l.rest()
+		if len(unexpected) > 10 {
+			unexpected = unexpected[:10] + "…"
+		}
+		l.errorf("expected keyword (package, config, option, list) or eof, got %q", unexpected)
 	}
 	return nil
 }
@@ -283,14 +288,14 @@ func lexOptionalName(l *lexer) stateFn {
 
 func lexOption(l *lexer) stateFn {
 	l.pos += len(kwOption)
-	l.emit(ItemOption)
+	l.emit(itemOption)
 	l.consumeWhitespace()
 	return lexOptionName
 }
 
 func lexList(l *lexer) stateFn {
 	l.pos += len(kwList)
-	l.emit(ItemList)
+	l.emit(itemList)
 	l.consumeWhitespace()
 	return lexOptionName
 }

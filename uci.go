@@ -58,10 +58,19 @@ type Tree interface {
 	// Set replaces the fully qualified option with the given values. It
 	// returns whether the config file and section exists. For new files
 	// and sections, you first need to initialize them with AddSection().
+	//
+	// Set will determine the option type by the number of values given.
+	// In particular, it will always choose TypeOption when len(values)
+	// is 1.
+	//
+	// Deprecated: Use SetType() to control the type.
 	Set(config, section, option string, values ...string) bool
 
-	// SetType sets the option type. Either ItemList or ItemOption.
-	SetType(config, section, option string, itemType ItemType, values ...string) bool
+	// SetType replaces the fully qualified option with the given values.
+	// It returns whether the config file and section exists. For new
+	// files and sections, you first need to initialize them with
+	// AddSection().
+	SetType(config, section, option string, typ OptionType, values ...string) bool
 
 	// Del removes a fully qualified option.
 	Del(config, section, option string)
@@ -93,7 +102,6 @@ func NewTree(root string) Tree {
 }
 
 func (t *tree) LoadConfig(name string, forceReload bool) error {
-	fmt.Println("test")
 	t.Lock()
 	defer t.Unlock()
 
@@ -112,7 +120,7 @@ func (t *tree) LoadConfig(name string, forceReload bool) error {
 func (t *tree) loadConfig(name string) error {
 	body, err := ioutil.ReadFile(filepath.Join(t.dir, name))
 	if err != nil {
-		return err
+		return fmt.Errorf("reading config file failed: %w", err)
 	}
 	cfg, err := parse(name, string(body))
 	if err != nil {
@@ -241,7 +249,7 @@ func (t *tree) lookupValues(config, section, option string) ([]string, bool) {
 	return opt.Values, true
 }
 
-func (t *tree) SetType(config, section, option string, itemType ItemType, values ...string) bool {
+func (t *tree) SetType(config, section, option string, typ OptionType, values ...string) bool {
 	t.Lock()
 	defer t.Unlock()
 
@@ -257,14 +265,17 @@ func (t *tree) SetType(config, section, option string, itemType ItemType, values
 	if opt := sec.Get(option); opt != nil {
 		opt.SetValues(values...)
 	} else {
-		sec.Add(newOption(option, itemType, values...))
+		sec.Add(newOption(option, typ, values...))
 	}
 	cfg.tainted = true
 	return true
 }
 
 func (t *tree) Set(config, section, option string, values ...string) bool {
-	return t.SetType(config, section, option, ItemOption, values...)
+	if len(values) > 1 {
+		return t.SetType(config, section, option, TypeList, values...)
+	}
+	return t.SetType(config, section, option, TypeOption, values...)
 }
 
 func (t *tree) Del(config, section, option string) {
@@ -351,17 +362,17 @@ func (t *tree) saveConfig(c *config) error {
 	if err = f.Chmod(0644); err != nil {
 		f.Close()
 		_ = f.Remove()
-		return err
+		return fmt.Errorf("save: failed to set permissions: %w", err)
 	}
 	if err = f.Sync(); err != nil {
 		f.Close()
 		_ = f.Remove()
-		return err
+		return fmt.Errorf("save: failed to sync: %w", err)
 	}
 	f.Close()
 
 	if err = f.Rename(filepath.Join(t.dir, c.Name)); err != nil {
-		return err
+		return fmt.Errorf("save: failed to replace existing config: %w", err)
 	}
 
 	c.tainted = false
@@ -382,7 +393,7 @@ type tmpFile interface {
 var newTmpFile = func(dir, pattern string) (tmpFile, error) {
 	f, err := ioutil.TempFile(dir, pattern)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create temp file: %w", err)
 	}
 	return &tmpFileImpl{f}, nil
 }

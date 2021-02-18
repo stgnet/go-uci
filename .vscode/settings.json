@@ -1,35 +1,23 @@
 {
-  "go.alternateTools": {
-    // GO111MODULES=off go get -u github.com/saibing/bingo
-    "go-langserver": "bingo",
-  },
-  "go.languageServerExperimentalFeatures": {
-    "format": false,
-    "autoComplete": false,
-    "rename": true,
-    "goToDefinition": true,
-    "hover": true,
-    "signatureHelp": true,
-    "goToTypeDefinition": true,
-    "goToImplementation": true,
-    "documentSymbols": true,
-    "workspaceSymbols": true,
-    "findReferences": true,
-    "diagnostics": false
-  },
   "go.useLanguageServer": true,
   "go.formatTool": "goimports",
-
   "go.lintTool": "golangci-lint",
   "go.lintFlags": [
     "--fast",
     "--enable-all",
     "--disable=errcheck",
+    "--disable=exhaustivestruct",
     "--disable=gas",
     "--disable=gochecknoglobals",
     "--disable=gochecknoinits",
     "--disable=gocyclo",
-    "--disable=lll",
-    "--disable=nakedret",
+    "--disable=gomnd", // too many false positives
+    "--disable=lll", // too opiniated
+    "--disable=nakedret", // too opiniated
+    "--disable=nlreturn", // too opiniated
+    "--disable=paralleltest", // defaultTree is a singleton
+    "--disable=testpackage", // we're testing internals
+    "--disable=wsl", // too opiniated
   ],
+  "go.testFlags": ["-v"]
 }
